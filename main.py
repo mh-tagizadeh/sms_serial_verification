@@ -1,4 +1,5 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify,flash, abort, redirect, render_template, url_for, Response
+import flask_login
 from pandas import read_excel
 import requests
 import config
@@ -6,9 +7,77 @@ import sqlite3
 import re
 app = Flask(__name__)
 
+login_manager = flask_login.LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+
+class User(flask_login.UserMixin):
+    def __init__(self, id):
+        self.id = id
+    
+    def __repr__(self):
+        return "%d" % (self.id)
+
+
+user = User(0)
+
+app.config.update (
+    SECRET_KEY = config.SECRET_KEY
+)
+
+
+@app.route('/login', methods = ['GET', 'POST'])
+def login():
+    if request.method == 'POST': 
+        username = request.form['username']
+        password = request.form['password']
+        if password == config.PASSWORD and username == config.USERNAME:
+            flask_login.login_user(user)
+            return redirect('/') 
+        else :
+            return abort(401)
+    else:
+        return Response('''
+        <form action="" method = "post">
+            <P>
+                <input type=text name="username">
+            </P>
+            <P>
+                <input type=password name="password">
+            </P>
+            <P>
+                <input type=submit value=Login>
+            </P>
+        </form>
+        ''')
+    
+
+@app.route('/logout')
+@flask_login.login_required
+def logout():
+    flask_login.logout_user()
+    return Response('<p>Logged out.</p>')
+
+@app.errorhandler(401)
+def page_not_found(error):
+    return Response('<p>Login faild</p>')
+
+@app.route('/protected')
+@flask_login.login_required
+def protected():
+    return 'Logged in as: ' + flask_login.current_user.id
+
 @app.route('/')
+@flask_login.login_required
 def hello():
     return "hello world"
+
+
+@login_manager.user_loader
+def user_loader(userid):
+    return User(userid)
+
 
 
 def send_sms(receptor, message):
@@ -126,7 +195,7 @@ def check_serial(serial):
         return 'this serial is among failed ones' # TODO : return the string provided by the customer
 
     query = f"SELECT * FROM serials WHERE start_serial < '{serial}' and  end_serial > '{serial}'"
-    print(query)
+    # print(query)
     results = cur.execute(query)
     if len(results.fetchall()) == 1:
         return 'I found your serial' # TODO: return the string provided by the customer     
@@ -155,5 +224,5 @@ if __name__ == '__main__':
     # a, b = import_database_from_excel('data.xlsx')
     # print(f'inserted {a} rows and {b} invalids ')
     import_database_from_excel('data.xlsx')
-    print(check_serial("JJ140"))
+    # print(check_serial("JJ140"))
     app.run(debug = True)
