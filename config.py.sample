@@ -1,0 +1,2 @@
+API_KEY = "put your API key from Kavenegar here."
+DATABASE_FILE_PATH = "paht to the file which is used by sqlite"

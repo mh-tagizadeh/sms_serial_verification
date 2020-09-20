@@ -1,0 +1,5 @@
+config.py
+data.sqlite
+*.sqlite
+sqlite3.exe
+__pycache__/

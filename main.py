@@ -32,21 +32,7 @@ def normalize_string(str):
     return (str)
 
 
-@app.route('/process', methods = ['POST', 'GET'])
-def process():
-    """ this is call back from Kavenegar. will get sender and message and 
-    will check if it is valid, then ansewr back.
-    """
-    if request.method == 'POST':
-        data = request.form
-        # import pdb; pdb.set_trace()
-        
-        sender = data['from'] 
-        message = normalize_string(data['message']) 
-        print(f'recived {message} from {sender}')
-        send_sms(sender, f"Hi {message}")
-        ret = {'message' : 'processed'}
-        return jsonify(ret), 200
+
 
 
 
@@ -127,8 +113,40 @@ def import_database_from_excel(filepath):
     return (serial_counter, invalid_counter)
 
 
+def check_serial(serial):
+    """ this function will get one serial number  and serial appropriate
+    answer to that, after consulting the db
+    """
+    conn = sqlite3.connect(config.DATABASE_FILE_PATH)
+    cur = conn.cursor()
 
+    query = f"SELECT * FROM invalids WHERE invalid_serial == '{serial}'"
+    results = cur.execute(query)
+    if len(results.fetchall()) == 1:
+        return 'this serial is among failed ones' # TODO : return the string provided by the customer
 
+    query = f"SELECT * FROM serials WHERE start_serial < '{serial}' and  end_serial > '{serial}'"
+    print(query)
+    results = cur.execute(query)
+    if len(results.fetchall()) == 1:
+        return 'I found your serial' # TODO: return the string provided by the customer     
+    return 'It was not a db.' 
+    
+@app.route('/process', methods = ['POST', 'GET'])
+def process():
+    """ this is call back from Kavenegar. will get sender and message and 
+    will check if it is valid, then ansewr back.
+    """
+    if request.method == 'POST':
+        data = request.form
+        # import pdb; pdb.set_trace()
+        sender = data['from'] 
+        message = normalize_string(data['message']) 
+        print(f'recived {message} from {sender}') # TODO: logging
+        answer = check_serial(message)
+        send_sms(sender,answer)
+        ret = {'message' : 'processed'}
+        return jsonify(ret), 200
         
 
 
@@ -136,4 +154,6 @@ if __name__ == '__main__':
     # send_sms('09216273839', 'Hi there.')
     # a, b = import_database_from_excel('data.xlsx')
     # print(f'inserted {a} rows and {b} invalids ')
+    import_database_from_excel('data.xlsx')
+    print(check_serial("JJ140"))
     app.run(debug = True)
