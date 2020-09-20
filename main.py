@@ -22,14 +22,14 @@ def send_sms(receptor, message):
     res = requests.post(url, data)
     print(f"message *{message}* sent. status code is {res.status_code}")
 
-def normalize_string(str):
+def normalize_string(data):
     from_char = "1234567890" # the other time convert to persian numbers
     to_char = "1234567890" # the other time convert to persian numbers
     for i in range(len(from_char)):
-        str = str.replace(from_char[i], to_char[i])
-    str = re.sub(r'\W+', '', str) #remove any non alphanumric
-    str = str.upper()
-    return (str)
+        data = data.replace(from_char[i], to_char[i])
+    data = re.sub(r'\W+', '', data) #remove any non alphanumric
+    data = data.upper()
+    return (data)
 
 
 
