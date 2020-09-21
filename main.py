@@ -91,13 +91,25 @@ def send_sms(receptor, message):
     res = requests.post(url, data)
     print(f"message *{message}* sent. status code is {res.status_code}")
 
-def normalize_string(data):
-    from_char = "1234567890" # the other time convert to persian numbers
+def normalize_string(data, fixed_size = 30):
+    from_persian_char = "1234567890" # the other time convert to persian numbers
+    from_arabic_char = "1234567890" # the other time convert to persian numbers
     to_char = "1234567890" # the other time convert to persian numbers
-    for i in range(len(from_char)):
-        data = data.replace(from_char[i], to_char[i])
-    data = re.sub(r'\W+', '', data) #remove any non alphanumric
+    for i in range(len(to_char)):
+        data = data.replace(from_persian_char[i], to_char[i])
+        data = data.replace(from_arabic_char[i], to_char[i])
     data = data.upper()
+    data = re.sub(r'\W+', '', data) #remove any non alphanumric
+    all_alpha = ''
+    all_digit = ''
+    for c in data:
+        if c.isalpha():
+            all_alpha += c
+        elif c.isdigit():
+            all_digit += c
+
+    missing_zeros = fixed_size - len(all_alpha) - len(all_digit)
+    data = all_alpha + '0' * missing_zeros + all_digit
     return (data)
 
 
