@@ -1,11 +1,20 @@
-from flask import Flask, request, jsonify,flash, abort, redirect, render_template, url_for, Response
+import re
+import os
+import requests
+
+
+from flask import Flask, flash, session,request, jsonify,flash, abort, redirect, render_template, url_for, Response
 import flask_login
 from pandas import read_excel
-import requests
+from werkzeug.utils import secure_filename
 import config
 import sqlite3
-import re
+
 app = Flask(__name__)
+
+
+UPLOAD_FILE = config.UPLOAD_FILE 
+ALLOWED_EXTENSIONS = config.ALLOWED_EXTENSIONS 
 
 login_manager = flask_login.LoginManager()
 login_manager.init_app(app)
@@ -68,10 +77,57 @@ def page_not_found(error):
 def protected():
     return 'Logged in as: ' + flask_login.current_user.id
 
-@app.route('/')
+
+def allowed_file(filename):
+      return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+# @app.route('/')
+# def hello():
+#     """
+#     docstring
+#     """
+#     return 'hello'
+
+@app.route('/', methods = ['GET', 'POST'])
 @flask_login.login_required
-def hello():
-    return "hello world"
+def home():
+    if request.method == 'POST':
+        # check if the post request has the file part
+        if 'file' not in request.files:
+            flash('No file part')
+            session['message'] = 'No file part'
+            return redirect(request.url)
+        file = request.files['file']
+        # if user does not select file, browser also
+        # submit an empty part without filename
+        if file.filename == '':
+            flash('No selected file')
+            session['message'] = 'No selected file'
+            return redirect(request.url)
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            # app.config['UPLOAD_FOLDER']
+            file_path = os.path.join(config.UPLOAD_FILE ,filename)
+            file.save(file_path)
+            rows, failures = import_database_from_excel(file_path)
+            session['message'] = f'Imported { rows } rows of serials and {failures} rows of failure'
+            os.remove(file_path)
+            return redirect('/')
+            #return redirect(url_for('uploaded_file', filename=filename))
+    message = session.get('message', '')
+    session['message'] = ''
+    return f'''
+    <!doctype html>
+    <title>Upload new File</title>
+    <h1>Upload new File</h1>
+    <h3>{message}</h3>
+    <form method=post enctype=multipart/form-data>
+      <input type=file name=file>
+      <input type=submit value=Upload>
+    </form>
+    '''
 
 
 @login_manager.user_loader
@@ -235,6 +291,6 @@ if __name__ == '__main__':
     # send_sms('09216273839', 'Hi there.')
     # a, b = import_database_from_excel('data.xlsx')
     # print(f'inserted {a} rows and {b} invalids ')
-    import_database_from_excel('data.xlsx')
+    #import_database_from_excel('data.xlsx')
     # print(check_serial("JJ140"))
     app.run(debug = True)
