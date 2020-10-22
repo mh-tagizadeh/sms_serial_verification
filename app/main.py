@@ -9,9 +9,14 @@ from pandas import read_excel
 from werkzeug.utils import secure_filename
 import config
 import sqlite3
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 app = Flask(__name__)
-
+limiter = Limiter(
+    app,
+    key_func=get_remote_address,
+)
 
 UPLOAD_FILE = config.UPLOAD_FILE 
 ALLOWED_EXTENSIONS = config.ALLOWED_EXTENSIONS 
@@ -37,6 +42,7 @@ app.config.update (
 
 
 @app.route('/login', methods = ['GET', 'POST'])
+@limiter.limit("5 per minute")
 def login():
     if request.method == 'POST': 
         username = request.form['username']
@@ -130,9 +136,20 @@ def home():
     '''
 
 
+
+
+
+
+
 @login_manager.user_loader
 def user_loader(userid):
     return User(userid)
+
+
+@app.route('/v1/ok')
+def health_check():
+    ret = {'message' : 'ok'}
+    return jsonify(ret), 200
 
 
 
