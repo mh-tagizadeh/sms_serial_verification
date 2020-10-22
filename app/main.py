@@ -21,6 +21,9 @@ limiter = Limiter(
 UPLOAD_FILE = config.UPLOAD_FILE 
 ALLOWED_EXTENSIONS = config.ALLOWED_EXTENSIONS 
 
+CALL_BACK_TOKEN = config.CALL_BACK_TOKEN 
+
+
 login_manager = flask_login.LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
@@ -286,7 +289,7 @@ def check_serial(serial):
         return 'I found your serial' # TODO: return the string provided by the customer     
     return 'It was not a db.' 
     
-@app.route('/process', methods = ['POST', 'GET'])
+@app.route('/v1/{CALL_BACK_TOKEN}/process', methods = ['POST', 'GET'])
 def process():
     """ this is call back from Kavenegar. will get sender and message and 
     will check if it is valid, then ansewr back.
@@ -308,6 +311,6 @@ if __name__ == '__main__':
     # send_sms('09216273839', 'Hi there.')
     # a, b = import_database_from_excel('data.xlsx')
     # print(f'inserted {a} rows and {b} invalids ')
-    #import_database_from_excel('data.xlsx')
+    # import_database_from_excel('data.xlsx')
     # print(check_serial("JJ140"))
     app.run(debug = True)

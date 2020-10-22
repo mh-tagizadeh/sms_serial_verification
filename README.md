@@ -17,5 +17,6 @@
     - [x] merge pull request.. check I mean :)
     - [ ] do praper inserts with INTO   
     - [ ] templating
-    - [ ] H shafiee
     - [x] rate limit
+    - [ ] add call back token on kaenegar site
+
