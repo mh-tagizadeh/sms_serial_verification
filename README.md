@@ -14,9 +14,9 @@
     - [x] refactor name str in normalize function
     - [x] in normalize , convert AB001 to AB00001 (max len? say 15)
     - [ ] dockerize (alphine? search fo ruwsgi)
-    - [x] merge pull request.. check I mean :)
+    - [ ] merge pull request.. check I mean :)
     - [ ] do praper inserts with INTO   
-    - [ ] templating
+    - [x] templating
     - [x] rate limit
     - [ ] add call back token on kaenegar site
 

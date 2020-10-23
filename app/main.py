@@ -3,7 +3,7 @@ import os
 import requests
 
 
-from flask import Flask, flash, session,request, jsonify,flash, abort, redirect, render_template, url_for, Response
+from flask import Flask, flash,request, jsonify,flash, abort, redirect, render_template, url_for, Response
 import flask_login
 from pandas import read_excel
 from werkzeug.utils import secure_filename
@@ -45,7 +45,7 @@ app.config.update (
 
 
 @app.route('/login', methods = ['GET', 'POST'])
-@limiter.limit("5 per minute")
+@limiter.limit("10 per minute")
 def login():
     if request.method == 'POST': 
         username = request.form['username']
@@ -56,7 +56,8 @@ def login():
         else :
             return abort(401)
     else:
-        return Response('''
+
+        html_str = Response('''
         <form action="" method = "post">
             <P>
                 <input type=text name="username">
@@ -69,17 +70,20 @@ def login():
             </P>
         </form>
         ''')
+        return render_template('login.html')
     
 
 @app.route('/logout')
 @flask_login.login_required
 def logout():
     flask_login.logout_user()
-    return Response('<p>Logged out.</p>')
+    flash('Logged out')
+    return redirect('/login')
 
 @app.errorhandler(401)
 def page_not_found(error):
-    return Response('<p>Login faild</p>')
+    flash('Login problem')
+    return redirect('/login')
 
 @app.route('/protected')
 @flask_login.login_required
@@ -106,14 +110,12 @@ def home():
         # check if the post request has the file part
         if 'file' not in request.files:
             flash('No file part')
-            session['message'] = 'No file part'
             return redirect(request.url)
         file = request.files['file']
         # if user does not select file, browser also
         # submit an empty part without filename
         if file.filename == '':
             flash('No selected file')
-            session['message'] = 'No selected file'
             return redirect(request.url)
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
@@ -121,22 +123,11 @@ def home():
             file_path = os.path.join(config.UPLOAD_FILE ,filename)
             file.save(file_path)
             rows, failures = import_database_from_excel(file_path)
-            session['message'] = f'Imported { rows } rows of serials and {failures} rows of failure'
+            flash(f'Imported { rows } rows of serials and {failures} rows of failure')
             os.remove(file_path)
             return redirect('/')
             #return redirect(url_for('uploaded_file', filename=filename))
-    message = session.get('message', '')
-    session['message'] = ''
-    return f'''
-    <!doctype html>
-    <title>Upload new File</title>
-    <h1>Upload new File</h1>
-    <h3>{message}</h3>
-    <form method=post enctype=multipart/form-data>
-      <input type=file name=file>
-      <input type=submit value=Upload>
-    </form>
-    '''
+    return render_template('index.html')
 
 
 
