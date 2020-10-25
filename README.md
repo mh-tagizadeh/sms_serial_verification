@@ -29,7 +29,7 @@
     - [ ] proper texts are provided in /..
     - [x] is it possible to check a serial from the gui?
     - [x] dummy message for end to end test via sms
-    - [ ] log all incomming smss
+    - [x] log all incomming smss
     - [ ] Atomic problem when I'm commiting every 10 inserts
     - [ ] show smsm at the bottom of the dashboard 
 

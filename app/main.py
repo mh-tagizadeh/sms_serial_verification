@@ -9,6 +9,7 @@ from pandas import read_excel
 from werkzeug.utils import secure_filename
 import config
 import MySQLdb 
+import time
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
@@ -324,6 +325,20 @@ def process():
         message = normalize_string(data['message']) 
         print(f'recived {message} from {sender}') # TODO: logging
         answer = check_serial(message)
+
+        
+        db = MySQLdb.connect(host=config.MYSQL_HOST,port=3307,user=config.MYSQL_USERNAME,
+                          passwd=config.MYSQL_PASSWORD,db=config.MYSQL_DBNAME)
+
+        cur = db.cursor()
+        
+        now = time.strftime('%Y-%m-%d %H:%M:%S')
+        cur.execute("INSERT INTO PROCESSED_SMS (sernder, message, answer, date) VALUES (%s, %s, %s, '%s')",
+                (sender, message, answer, now))
+        db.commit()
+        db.close()
+
+
         send_sms(sender,answer)
         ret = {'message' : 'processed'}
         return jsonify(ret), 200
