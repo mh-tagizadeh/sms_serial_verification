@@ -4,7 +4,6 @@
     - [x] xx https://ngrok.com/
     - [x] add db path to config.py.sample
     - [x] do more while normalizing, specially against SQLInjection. remove all no alpha numerical
-    - [ ] Atomic problem when I'm commiting every 10 inserts
     - [x] some health check url
     - [x] there is problem with JJ10000000000 and JJ100
     - [x] create requirements.txt (pip freeze)
@@ -21,16 +20,18 @@
     - [x] we do not normalize the faied serials when importing!
     - [x] invalids can have duplicates
     - [x] migrate to mysql
-    - [x] if we have 2 matches on serials , regurn a general Ok MESSAGE							
+    - [x] if we have 2 matches on serials , regurn a general Ok MESSAGE			
     - [x] altech
     - [x] add altech logo based on the email
     - [x] close db connection in check_serial
     - [ ] count the failed insertions in db
-    - [ ] regenerate requirements.txt with MySQLdb
+    - [x] regenerate requirements.txt with MySQLdb
     - [ ] proper texts are provided in /..
-    - [ ] is it possible to check a serial from the gui?
-    - [ ] dummy message for end to end test via sms
+    - [x] is it possible to check a serial from the gui?
+    - [x] dummy message for end to end test via sms
     - [ ] log all incomming smss
+    - [ ] Atomic problem when I'm commiting every 10 inserts
+    - [ ] show smsm at the bottom of the dashboard 
 
 
     

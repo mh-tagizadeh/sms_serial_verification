@@ -83,6 +83,19 @@ def login():
         return render_template('login.html')
     
 
+
+@app.route('/check_one_serial', methods = [ 'POST'])
+@flask_login.login_required
+def check_one_serial():
+    serial_to_check = request.form['serial']
+    answer = check_serial(normalize_string(serial_to_check))
+    flash(answer , 'info')
+
+    return redirect('/')
+
+
+
+
 @app.route('/logout')
 @flask_login.login_required
 def logout():
