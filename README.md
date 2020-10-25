@@ -21,7 +21,17 @@
     - [x] we do not normalize the faied serials when importing!
     - [x] invalids can have duplicates
     - [x] migrate to mysql
-    - [ ] altech
-    - [ ] add altech logo based on the email
+    - [x] if we have 2 matches on serials , regurn a general Ok MESSAGE							
+    - [x] altech
+    - [x] add altech logo based on the email
+    - [x] close db connection in check_serial
+    - [ ] count the failed insertions in db
+    - [ ] regenerate requirements.txt with MySQLdb
+    - [ ] proper texts are provided in /..
+    - [ ] is it possible to check a serial from the gui?
+    - [ ] dummy message for end to end test via sms
+    - [ ] log all incomming smss
+
+
     
 

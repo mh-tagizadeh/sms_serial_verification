@@ -90,11 +90,9 @@ def logout():
     flash('Logged out')
     return redirect('/login')
 
-@app.errorhandler(401)
+@app.errorhandler(404)
 def page_not_found(error):
-    flash('Login problem')
-    return redirect('/login')
-
+    return render_template('404.html'), 404
 @app.route('/protected')
 @flask_login.login_required
 def protected():
@@ -116,8 +114,8 @@ def allowed_file(filename):
 @app.route('/', methods = ['GET', 'POST'])
 @flask_login.login_required
 def home():
-    if flask_login.current_user.is_authenticated:
-        return redirect('/')
+    # if flask_login.current_user.is_authenticated:
+    #   return redirect('/')
     if request.method == 'POST':
         # check if the post request has the file part
         if 'file' not in request.files:
@@ -284,15 +282,21 @@ def check_serial(serial):
 
     results = cur.execute("SELECT * FROM invalids WHERE invalid_serial = %s", (serial, ))
     if results > 0:
+        db.close()
         return 'this serial is among failed ones' # TODO : return the string provided by the customer
 
     query = f"SELECT * FROM serials WHERE start_serial <= %s and  end_serial >= %s "
     # print(query)
     results = cur.execute(query, (serial, serial))
+    if results > 1:
+        db.close()
+        return 'I found your serial' # TODO: fix with proper message
     if results  == 1:
         ret = cur.fetchone()
         desc = ret[2]
+        db.close()
         return 'I found your serial', desc # TODO: return the string provided by the customer     
+    db.close()
     return 'It was not a db.' 
     
 @app.route('/v1/{CALL_BACK_TOKEN}/process', methods = ['POST', 'GET'])
