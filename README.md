@@ -31,7 +31,9 @@
     - [x] dummy message for end to end test via sms
     - [x] log all incomming smss
     - [ ] Atomic problem when I'm commiting every 10 inserts
-    - [ ] show smsm at the bottom of the dashboard 
+    - [x] show smsm at the bottom of the dashboard 
+    - [ ] define indexes on mysql
+    - [ ] add some nubmer to the cards 
 
 
     

@@ -151,7 +151,21 @@ def home():
             os.remove(file_path)
             return redirect('/')
             #return redirect(url_for('uploaded_file', filename=filename))
-    return render_template('index.html')
+
+    db = MySQLdb.connect(host=config.MYSQL_HOST,port=3307,user=config.MYSQL_USERNAME,
+                          passwd=config.MYSQL_PASSWORD,db=config.MYSQL_DBNAME)
+    cur = db.cursor()
+    cur.execute("SELECT * FROM PROCESSED_SMS ORDER BY date DESC LIMIT 5000")
+    all_smss = cur.fetchall()
+    smss = []
+
+    for sms in all_smss:
+        for i in range(1000): 
+            sender , message, answer, date = sms
+            smss.append({'sender': sender, 'message':message, 'answer':answer,'date':date })
+    smss.append({'sender': 'a', 'message':'m', 'answer':'aa','date':'a'})
+
+    return render_template('index.html',  data = {'smss':smss})
 
 
 
@@ -313,7 +327,7 @@ def check_serial(serial):
     db.close()
     return 'It was not a db.' 
     
-@app.route('/v1/{CALL_BACK_TOKEN}/process', methods = ['POST', 'GET'])
+@app.route('/v1/process', methods = ['POST', 'GET'])
 def process():
     """ this is call back from Kavenegar. will get sender and message and 
     will check if it is valid, then ansewr back.
@@ -332,9 +346,11 @@ def process():
 
         cur = db.cursor()
         
-        now = time.strftime('%Y-%m-%d %H:%M:%S')
-        cur.execute("INSERT INTO PROCESSED_SMS (sernder, message, answer, date) VALUES (%s, %s, %s, '%s')",
-                (sender, message, answer, now))
+        now = time.strftime('%Y-%m-%d:%H:%M:%S')
+        query = f"INSERT INTO PROCESSED_SMS (sender, message, answer, date) VALUES (%s, %s,%s , '{now}')"
+        val = (sender, message, answer[1])
+        cur.execute(query,val)
+
         db.commit()
         db.close()
 
