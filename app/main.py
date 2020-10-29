@@ -89,8 +89,8 @@ def login():
 @flask_login.login_required
 def check_one_serial():
     serial_to_check = request.form['serial']
-    answer = check_serial(normalize_string(serial_to_check))
-    flash(answer , 'info')
+    status ,log,answer = check_serial(normalize_string(serial_to_check))
+    flash(f'{status}-{log}:{answer} ', 'info')
 
     return redirect('/')
 
@@ -155,17 +155,46 @@ def home():
     db = MySQLdb.connect(host=config.MYSQL_HOST,port=3307,user=config.MYSQL_USERNAME,
                           passwd=config.MYSQL_PASSWORD,db=config.MYSQL_DBNAME)
     cur = db.cursor()
+
+
+    # get last 5000 smss
     cur.execute("SELECT * FROM PROCESSED_SMS ORDER BY date DESC LIMIT 5000")
     all_smss = cur.fetchall()
     smss = []
 
     for sms in all_smss:
-        for i in range(1000): 
-            sender , message, answer, date = sms
-            smss.append({'sender': sender, 'message':message, 'answer':answer,'date':date })
-    smss.append({'sender': 'a', 'message':'m', 'answer':'aa','date':'a'})
+        status ,sender , message, answer, date = sms
+        smss.append({'status': status, 'sender': sender, 'message':message, 'answer':answer,'date':date })
 
-    return render_template('index.html',  data = {'smss':smss})
+
+
+
+
+    #colect some stats for the GUI
+
+
+    cur.execute("SELECT count(*) FROM PROCESSED_SMS WHERE status = 'ok'")
+    num_ok = cur.fetchone()[0]
+
+
+
+    cur.execute("SELECT count(*) FROM PROCESSED_SMS WHERE status = 'failure'")
+    num_failure = cur.fetchone()[0]
+
+
+    cur.execute("SELECT count(*) FROM PROCESSED_SMS WHERE status = 'double'")
+    num_double = cur.fetchone()[0]
+
+
+    cur.execute("SELECT count(*) FROM PROCESSED_SMS WHERE status = 'not-found'")
+    num_notfound = cur.fetchone()[0]
+
+    return render_template('index.html',  data = {'smss':smss,
+            'ok': num_ok,
+            'failure': num_failure,
+            'double': num_double,
+            'notfound': num_notfound
+            })
 
 
 
@@ -253,7 +282,7 @@ def import_database_from_excel(filepath):
         description VARCHAR(200) ,
         start_serial CHAR(30) ,
         end_serial CHAR(30) ,
-        date DATETIME); 
+        date DATETIME, INDEX(start_serial, end_serial)); 
         """)
     db.commit()
 
@@ -280,6 +309,7 @@ def import_database_from_excel(filepath):
     cur.execute('DROP TABLE IF EXISTS invalids')
     cur.execute(""" CREATE TABLE invalids (
         invalid_serial CHAR(30)
+        , INDEX(invalid_serial)
     );
     """)
     db.commit()
@@ -287,6 +317,7 @@ def import_database_from_excel(filepath):
     df = read_excel(filepath, 1) 
     # sheet one contains failed serial numbers. only one column
     for index, (faild_serial, ) in df.iterrows():
+        faild_serial =  normalize_string(faild_serial)
         cur.execute('INSERT INTO invalids VALUES (%s);', (faild_serial, ))
 
         # TODO: do some more error handling
@@ -308,24 +339,25 @@ def check_serial(serial):
                           passwd=config.MYSQL_PASSWORD,db=config.MYSQL_DBNAME)
     cur = db.cursor()
 
+    print(serial)
     results = cur.execute("SELECT * FROM invalids WHERE invalid_serial = %s", (serial, ))
+    print(results)
     if results > 0:
         db.close()
-        return 'this serial is among failed ones' # TODO : return the string provided by the customer
-
+        return 'failure','','this serial is among failed ones' # TODO : return the string provided by the customer 
     query = f"SELECT * FROM serials WHERE start_serial <= %s and  end_serial >= %s "
     # print(query)
     results = cur.execute(query, (serial, serial))
     if results > 1:
         db.close()
-        return 'I found your serial' # TODO: fix with proper message
+        return 'double', 'I found your serial' # TODO: fix with proper message
     if results  == 1:
         ret = cur.fetchone()
         desc = ret[2]
         db.close()
-        return 'I found your serial', desc # TODO: return the string provided by the customer     
+        return 'ok','I found your serial', desc # TODO: return the string provided by the customer     
     db.close()
-    return 'It was not a db.' 
+    return 'not-found','','It was not a db.' 
     
 @app.route('/v1/process', methods = ['POST', 'GET'])
 def process():
@@ -334,11 +366,13 @@ def process():
     """
     if request.method == 'POST':
         data = request.form
-        # import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
         sender = data['from'] 
         message = normalize_string(data['message']) 
         print(f'recived {message} from {sender}') # TODO: logging
-        answer = check_serial(message)
+        
+        print(check_serial(message))
+        status, log , answer = check_serial(message)
 
         
         db = MySQLdb.connect(host=config.MYSQL_HOST,port=3307,user=config.MYSQL_USERNAME,
@@ -347,8 +381,11 @@ def process():
         cur = db.cursor()
         
         now = time.strftime('%Y-%m-%d:%H:%M:%S')
-        query = f"INSERT INTO PROCESSED_SMS (sender, message, answer, date) VALUES (%s, %s,%s , '{now}')"
-        val = (sender, message, answer[1])
+        query = f"INSERT INTO PROCESSED_SMS (status, sender, message, answer, date) VALUES (%s,%s, %s,%s , '{now}')"
+
+
+
+        val = (status, sender, message, f'{log}:{answer}')
         cur.execute(query,val)
 
         db.commit()
@@ -363,12 +400,34 @@ def process():
 
 if __name__ == '__main__':
     # send_sms('09216273839', 'Hi there.')
-    # a, b = import_database_from_excel('data.xlsx')
+    #a, b = import_database_from_excel('data.xlsx')
     # print(f'inserted {a} rows and {b} invalids ')
     #import_database_from_excel('/home/hosein/w/data.xlsx')
     #ss = ['', '1' , 'A', 'JM110','JM0000000000000000000000101','JM0000000000000000000000000101' ,'JM0000000000000000000109', 'JM101', 'JJ0000000000000000000007654321']
     # print(check_serial("JJ140"))
     #for s in ss:
     #    print(check_serial(s))
+    #process('sender', normalize_string('JM199'))
+    #process('sender',normalize_string('JJ1000000'))
+    #process('sender',normalize_string('JM101'))
+    #process('sender', normalize_string('JJ101'))
+    #process('sender',normalize_string('chert'))
+
     app.run(debug = True)
-    
+   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -32,8 +32,9 @@
     - [x] log all incomming smss
     - [ ] Atomic problem when I'm commiting every 10 inserts
     - [x] show smsm at the bottom of the dashboard 
-    - [ ] define indexes on mysql
-    - [ ] add some nubmer to the cards 
+    - [x] define indexes on mysql
+    - [ ] trim too long sms input
+    - [x] add some nubmer to the cards 
 
 
     
